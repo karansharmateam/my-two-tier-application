@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # This service is named 'db'. Flask will look for MYSQL_HOST=db
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - twotier
+
+  flaskapp:
+    build: .
+    container_name: flaskapp-prod
+    # If the DB isn't ready, this tells Docker to try again
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    environment:
+      MYSQL_HOST: db    # This MUST match the service name 'db' above
+      MYSQL_USER: root
+      MYSQL_PASSWORD: admin
+      MYSQL_DB: mydb
+    depends_on:
+      - db
+    networks:
+      - twotier
+
+networks:
+  twotier:
+    driver: bridge
+
+volumes:
+  mysql-data:
