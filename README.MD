@@ -1,6 +1,3 @@
-This README is designed for your GitHub repository. It’s written so that a new learner can follow your exact journey—from setting up the cluster to fixing the database and networking issues you solved today.
-
----
 
 # Two-Tier Flask App Deployment on AWS EKS
 
