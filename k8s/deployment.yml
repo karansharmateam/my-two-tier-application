@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: two-tier-app-deployment
+  namespace: nginx
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: two-tier-app
+  template:
+    metadata:
+      labels:
+        app: two-tier-app
+    spec:
+      containers:
+      - name: python-app
+        image: karansharmadocker123/my-two-tier-app:v1
+        ports:
+        - containerPort: 5000
+        env:                     # env is aligned with ports and image
+        - name: MYSQL_HOST
+          value: "mysql"
+        - name: MYSQL_USER
+          value: "root"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-auth
+              key: password
