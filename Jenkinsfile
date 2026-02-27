@@ -1,6 +1,14 @@
 @Library("Shared") _
+
 pipeline {
     agent { label "dev" }
+
+    environment {
+        DOCKER_IMAGE = "karansharmadocker123/two-tier-flask-app" 
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        AWS_REGION = "us-east-1"
+        EKS_CLUSTER_NAME = "my-eks-cluster"
+    }
 
     stages {
         stage("Code Clone") {
@@ -11,32 +19,38 @@ pipeline {
             }
         }
 
-        stage("Trivy file system scan") {
+        stage("Trivy Security Scan") {
             steps {
                 script {
-                    trivy_fs()
+                    trivy_fs() 
                 }
             }
         }
 
-        stage("Build & Test") {
+        stage("Build & Tag Image") {
             steps {
-                echo "Building and tagging the image..."
-                sh "docker build -t two-tier-flask-app ."
+                echo "Building Docker Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest ."
             }
         }
 
         stage("Push to Docker Hub") {
             steps {
                 script {
-                    docker_push("dockerHubCreds", "two-tier-flask-app")
+                    docker_push("dockerHubCreds", "${DOCKER_IMAGE}:${IMAGE_TAG}")
                 }
             }
         }
 
-        stage("Deploy") {
+        stage("Deploy to Amazon EKS") {
             steps {
-                sh "docker compose up -d"
+                script {
+                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
+                    
+                    sh "kubectl apply -f kubernetes/deployment.yaml"
+                    sh "kubectl apply -f kubernetes/service.yaml"
+                    sh "kubectl rollout status deployment/two-tier-app-deployment"
+                }
             }
         }
     }
@@ -45,50 +59,20 @@ pipeline {
         success {
             script {
                 emailext(
-                    from: 'karansharma@gmail.com',
-                    to: 'karansharma@gmail.com',
-                    body: 'Build success for Demo CICD app',
-                    subject: 'Build success for Demo CICD App'
+                    to: 'karansharma54332@gmail.com',
+                    subject: "SUCCESS: Build #${env.BUILD_NUMBER} - ${env.JOB_NAME}",
+                    body: "Deployment of ${DOCKER_IMAGE} to EKS was successful!"
                 )
             }
         }
         failure {
             script {
                 emailext(
-                    from: 'karansharma@gmail.com',
-                    to: 'karansharma@gmail.com',
-                    body: 'Build Failed for Demo CICD App',
-                    subject: 'Build Failed for Demo CICD App'
+                    to: 'karansharma54332@gmail.com',
+                    subject: "FAILURE: Build #${env.BUILD_NUMBER} - ${env.JOB_NAME}",
+                    body: "The pipeline failed. Please check the logs at ${env.BUILD_URL}"
                 )
             }
         }
     }
 }
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      
