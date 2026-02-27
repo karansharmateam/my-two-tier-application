@@ -47,9 +47,11 @@ pipeline {
                 script {
                     sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
                     
-                    sh "kubectl apply -f kubernetes/deployment.yaml"
-                    sh "kubectl apply -f kubernetes/service.yaml"
+                    sh "kubectl apply -f k8s/deployment.yml"
+                    sh "kubectl apply -f k8s/service.yml"
+                    sh "kubectl apply -f k8s/mysql.yml"
                     sh "kubectl rollout status deployment/two-tier-app-deployment"
+                    
                 }
             }
         }
@@ -70,7 +72,7 @@ pipeline {
                 emailext(
                     to: 'karansharma54332@gmail.com',
                     subject: "FAILURE: Build #${env.BUILD_NUMBER} - ${env.JOB_NAME}",
-                    body: "The pipeline failed. Please check the logs at ${env.BUILD_URL}"
+                    body: "The pipeline failed Please check the logs at ${env.BUILD_URL}"
                 )
             }
         }
